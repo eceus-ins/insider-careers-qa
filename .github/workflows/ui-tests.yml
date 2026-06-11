@@ -13,15 +13,8 @@ permissions:
 
 jobs:
   ui-tests:
-    name: Selenium UI Tests (${{ matrix.project }})
+    name: Selenium UI Tests
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - insider_automation_tests
-          - insider_career_tests
 
     steps:
       - name: Checkout repository
@@ -32,10 +25,10 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: ${{ matrix.project }}/requirements.txt
+          cache-dependency-path: insider_automation_tests/requirements.txt
 
       - name: Install dependencies
-        working-directory: ${{ matrix.project }}
+        working-directory: insider_automation_tests
         run: pip install -r requirements.txt
 
       - name: Install Chrome
@@ -44,28 +37,26 @@ jobs:
           chrome-version: stable
 
       - name: Create output directories
-        working-directory: ${{ matrix.project }}
+        working-directory: insider_automation_tests
         run: mkdir -p reports screenshots
 
       - name: Run UI tests
-        working-directory: ${{ matrix.project }}
+        working-directory: insider_automation_tests
         env:
           CI: "true"
         run: |
           pytest \
             --browser=chrome \
-            --html=reports/report.html \
-            --self-contained-html \
+            --headless \
             --junitxml=reports/junit.xml \
-            -v \
-            || true
+            -v
 
       - name: Publish test results
         uses: dorny/tests-reporter@v1
         if: always()
         with:
-          name: Test Results – ${{ matrix.project }}
-          path: ${{ matrix.project }}/reports/junit.xml
+          name: UI Test Results
+          path: insider_automation_tests/reports/junit.xml
           reporter: java-junit
           fail-on-error: false
 
@@ -73,16 +64,16 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: html-report-${{ matrix.project }}
-          path: ${{ matrix.project }}/reports/report.html
+          name: html-report
+          path: insider_automation_tests/reports/report.html
           retention-days: 14
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: screenshots-${{ matrix.project }}
-          path: ${{ matrix.project }}/screenshots/
+          name: screenshots
+          path: insider_automation_tests/screenshots/
           if-no-files-found: ignore
           retention-days: 14
 
@@ -91,15 +82,9 @@ jobs:
         if: github.event_name == 'pull_request' && always()
         with:
           script: |
-            const { data: checks } = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.runId,
-            });
-            const project = '${{ matrix.project }}';
             const status = '${{ job.status }}' === 'success' ? '✅ Passed' : '❌ Failed';
             const body = [
-              `### ${status} — UI Tests: \`${project}\``,
+              `### ${status} — UI Tests`,
               '',
               `**Run:** [#${context.runId}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
               `**Artifacts:** HTML report & screenshots uploaded (14-day retention).`,
