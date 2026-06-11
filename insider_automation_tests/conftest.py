@@ -6,11 +6,29 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.service import Service as FirefoxService
-from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.firefox import GeckoDriverManager
-
 
 _CI = os.environ.get("CI", "false").lower() == "true"
+
+
+def _get_chrome_service():
+    """Use webdriver-manager locally; let Selenium Manager handle CI."""
+    if _CI:
+        return None  # Selenium 4.x built-in Selenium Manager auto-downloads driver
+    try:
+        from webdriver_manager.chrome import ChromeDriverManager
+        return ChromeService(ChromeDriverManager().install())
+    except Exception:
+        return None
+
+
+def _get_firefox_service():
+    if _CI:
+        return None
+    try:
+        from webdriver_manager.firefox import GeckoDriverManager
+        return FirefoxService(GeckoDriverManager().install())
+    except Exception:
+        return None
 
 
 def pytest_addoption(parser):
@@ -44,20 +62,16 @@ def driver(request):
         else:
             options.add_argument("--start-maximized")
         options.add_argument("--disable-notifications")
-        drv = webdriver.Chrome(
-            service=ChromeService(ChromeDriverManager().install()),
-            options=options
-        )
+        service = _get_chrome_service()
+        drv = webdriver.Chrome(service=service, options=options) if service else webdriver.Chrome(options=options)
     elif browser == "firefox":
         options = FirefoxOptions()
         if headless:
             options.add_argument("--headless")
             options.add_argument("--width=1920")
             options.add_argument("--height=1080")
-        drv = webdriver.Firefox(
-            service=FirefoxService(GeckoDriverManager().install()),
-            options=options
-        )
+        service = _get_firefox_service()
+        drv = webdriver.Firefox(service=service, options=options) if service else webdriver.Firefox(options=options)
         if not headless:
             drv.maximize_window()
     else:
