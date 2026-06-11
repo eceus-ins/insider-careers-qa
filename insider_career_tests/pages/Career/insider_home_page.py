@@ -7,11 +7,8 @@ from base.base_page import PageBase
 class InsiderHomePage(PageBase):
     """Insider One main homepage — https://useinsider.com/"""
 
-    # Navbar
-    NAVBAR_COMPANY_ITEM = (By.XPATH, "//li[contains(@class,'nav-item')]//a[normalize-space()='Company']")
-    WE_ARE_HIRING_LINK = (By.XPATH, "//a[normalize-space()=\"We're hiring!\"]")
-    # Fallback: generic careers link when the dropdown label differs
-    CAREERS_NAV_LINK = (By.XPATH, "//a[contains(@href,'/careers') and not(contains(@href,'open-position'))]")
+    # "We're hiring" link — now lives in the footer (site rebranded to insiderone.com, Company nav removed)
+    WE_ARE_HIRING_LINK = (By.XPATH, "//a[@href='/careers/' and contains(normalize-space(), \"We're hiring\")]")
 
     INSIDER_LOGO = (By.XPATH, "//img[contains(@alt,'Insider') or contains(@src,'insider')]")
 
@@ -26,9 +23,9 @@ class InsiderHomePage(PageBase):
         )
 
     def is_loaded(self):
-        return "useinsider.com" in self.driver.current_url
+        return "insiderone.com" in self.driver.current_url or "useinsider.com" in self.driver.current_url
 
     def click_we_are_hiring(self):
-        """Hover over the Company nav item to expose the dropdown, then click 'We're hiring!'"""
-        self.hover_over(self.NAVBAR_COMPANY_ITEM)
-        self.click_element(self.WE_ARE_HIRING_LINK)
+        """Scroll to footer and click 'We're hiring' link (Company nav was removed in site rebrand)."""
+        element = self.scroll_to_and_get(self.WE_ARE_HIRING_LINK)
+        element.click()

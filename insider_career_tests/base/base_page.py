@@ -51,6 +51,11 @@ class PageBase:
             "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element
         )
 
+    def scroll_to_and_get(self, locator, timeout=None):
+        element = self.get_element(locator, timeout)
+        self.scroll_to_element(element)
+        return element
+
     def js_click(self, element):
         self.driver.execute_script("arguments[0].click();", element)
 

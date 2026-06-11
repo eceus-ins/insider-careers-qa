@@ -9,15 +9,12 @@ class TestInsiderCareers:
 
     Steps:
         1. Open homepage and verify it loads correctly.
-        2. Click "We're hiring" -> verify Careers page + 'Explore open roles' button.
-        3. Click 'Explore open roles' -> click Software Development open positions link.
-        4. Filter by Location='Istanbul, Turkiye' and Team='Quality Assurance'.
-        5. Verify every listed job contains 'Quality Assurance' and 'Istanbul, Turkiye'.
-        6. Click Apply on the first job and verify redirect to Lever application form.
+        2. Click "We're hiring" (footer link) -> verify Careers page + 'Explore open roles' button.
+        3. Click 'Explore open roles' -> click Quality Assurance department card.
+        4. Verify QA job listings load on the Lever jobs board.
+        5. Verify Istanbul QA jobs appear in the listing.
+        6. Click Apply on the first Istanbul job and verify redirect to Lever application form.
     """
-
-    LOCATION = "Istanbul, Turkiye"
-    TEAM = "Quality Assurance"
 
     def test_careers_flow(self, driver):
         # ── Step 1: Homepage ──────────────────────────────────────────────────
@@ -36,35 +33,34 @@ class TestInsiderCareers:
             "'Explore open roles' button is not visible on the Careers page"
         )
 
-        # ── Step 3: Open positions -> Software Development ────────────────────
+        # ── Step 3: Quality Assurance department -> Lever board ───────────────
         open_positions = careers.click_explore_open_roles()
-        open_positions.click_software_development_positions()
+        open_positions.click_quality_assurance_positions()
 
-        # ── Step 4: Apply filters ─────────────────────────────────────────────
-        open_positions.select_location(self.LOCATION)
-        open_positions.select_team(self.TEAM)
-
+        # ── Step 4: Verify QA jobs load ───────────────────────────────────────
         jobs = open_positions.wait_for_jobs_to_load()
-        assert len(jobs) > 0, (
-            f"No job listings found for team='{self.TEAM}' in location='{self.LOCATION}'"
-        )
+        assert len(jobs) > 0, "No Quality Assurance jobs found on Lever board"
 
-        # ── Step 5: Verify each job listing ──────────────────────────────────
         for job in jobs:
             title = open_positions.get_job_title(job)
-            dept = open_positions.get_job_department(job)
+            assert any(kw in title.lower() for kw in ["qa", "quality"]), (
+                f"Job '{title}' does not appear to be a Quality Assurance role"
+            )
+
+        # ── Step 5: Verify Istanbul QA jobs exist ─────────────────────────────
+        istanbul_jobs = open_positions.get_istanbul_jobs(jobs)
+        assert len(istanbul_jobs) > 0, (
+            "No Istanbul QA jobs found in the listing"
+        )
+
+        for job in istanbul_jobs:
             location = open_positions.get_job_location(job)
-
-            assert self.TEAM in title or self.TEAM in dept, (
-                f"Job does not belong to '{self.TEAM}'. "
-                f"Title: '{title}', Department: '{dept}'"
-            )
-            assert self.LOCATION in location, (
-                f"Job location '{location}' does not contain '{self.LOCATION}'"
+            assert "ISTANBUL" in location.upper(), (
+                f"Job location '{location}' does not contain 'Istanbul'"
             )
 
-        # ── Step 6: Apply -> Lever form ───────────────────────────────────────
-        open_positions.click_apply_on_first_job()
+        # ── Step 6: Apply -> Lever application form ───────────────────────────
+        open_positions.click_apply_on_first_istanbul_job(istanbul_jobs)
         open_positions.switch_to_new_tab()
         assert "lever.co" in open_positions.current_url, (
             f"Not redirected to Lever application form. "

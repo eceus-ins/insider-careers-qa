@@ -3,13 +3,10 @@ from pages.base_page import BasePage
 
 
 class HomePage(BasePage):
-    URL = "https://useinsider.com/"
+    URL = "https://insiderone.com/"
 
-    # Main navigation "Company" dropdown trigger
-    _COMPANY_NAV = (By.XPATH, "//nav//li/a[normalize-space()='Company']")
-
-    # "We're hiring!" link inside the Company dropdown
-    _WE_ARE_HIRING = (By.XPATH, "//a[contains(normalize-space(), \"We're hiring\")]")
+    # "We're hiring" link — now lives in the footer (site rebranded, Company nav removed)
+    _WE_ARE_HIRING = (By.XPATH, "//a[@href='/careers/' and contains(normalize-space(), \"We're hiring\")]")
 
     def open_homepage(self):
         self.open(self.URL)
@@ -21,7 +18,7 @@ class HomePage(BasePage):
 
     def click_we_are_hiring(self):
         from pages.careers_page import CareersPage
-        self.hover(self._COMPANY_NAV)
-        self.find_visible(self._WE_ARE_HIRING)
-        self.click(self._WE_ARE_HIRING)
+        element = self.find_clickable(self._WE_ARE_HIRING)
+        self.scroll_to(element)
+        self.js_click(element)
         return CareersPage(self.driver)
