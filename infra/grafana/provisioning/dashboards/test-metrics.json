@@ -1,0 +1,254 @@
+{
+  "id": null,
+  "uid": "qa-test-metrics",
+  "title": "QA Test Metrics",
+  "editable": true,
+  "schemaVersion": 42,
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": { "from": "now-7d", "to": "now" },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Pass Rate %",
+      "type": "stat",
+      "datasource": { "type": "mysql", "uid": "mysql-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "orange", "value": 70 },
+              { "color": "green", "value": 90 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "mysql", "uid": "mysql-ds" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(SUM(status = 'pass') / COUNT(*) * 100, 1) AS value\nFROM test_runs"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Toplam Fail Sayısı",
+      "type": "stat",
+      "datasource": { "type": "mysql", "uid": "mysql-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "mysql", "uid": "mysql-ds" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS value\nFROM test_runs\nWHERE status = 'fail'"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Pass / Fail / Skip Dağılımı",
+      "type": "piechart",
+      "datasource": { "type": "mysql", "uid": "mysql-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "pieType": "pie",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "mysql", "uid": "mysql-ds" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT status, COUNT(*) AS value\nFROM test_runs\nGROUP BY status"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Ortalama Test Süresi (Execution Time Trend)",
+      "type": "timeseries",
+      "datasource": { "type": "mysql", "uid": "mysql-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "mysql", "uid": "mysql-ds" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  DATE(run_at) AS time,\n  ROUND(AVG(duration_ms)) AS avg_duration_ms\nFROM test_runs\nGROUP BY DATE(run_at)\nORDER BY DATE(run_at) ASC"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Günlük Test Trendi (Pass / Fail)",
+      "type": "timeseries",
+      "datasource": { "type": "mysql", "uid": "mysql-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" }
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "mysql", "uid": "mysql-ds" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  DATE(run_at) AS time,\n  SUM(status = 'pass') AS pass,\n  SUM(status = 'fail') AS fail\nFROM test_runs\nGROUP BY DATE(run_at)\nORDER BY DATE(run_at) ASC"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "En Yavaş Testler",
+      "type": "table",
+      "datasource": { "type": "mysql", "uid": "mysql-ds" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" } }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "duration_ms" },
+            "properties": [{ "id": "unit", "value": "ms" }]
+          }
+        ]
+      },
+      "options": { "showHeader": true },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "mysql", "uid": "mysql-ds" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    test_name,\n    suite_name,\n    duration_ms,\n    run_at\nFROM test_runs\nORDER BY duration_ms DESC\nLIMIT 20"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "En Çok Fail Olan Testler",
+      "type": "table",
+      "datasource": { "type": "mysql", "uid": "mysql-ds" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" } },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      },
+      "options": { "showHeader": true },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "mysql", "uid": "mysql-ds" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    test_name,\n    suite_name,\n    COUNT(*) AS toplam_calisma,\n    SUM(status = 'fail') AS fail_sayisi,\n    ROUND(SUM(status = 'fail') / COUNT(*) * 100, 1) AS fail_orani\nFROM test_runs\nGROUP BY test_name, suite_name\nHAVING fail_sayisi > 0\nORDER BY fail_sayisi DESC"
+        }
+      ]
+    }
+  ]
+}

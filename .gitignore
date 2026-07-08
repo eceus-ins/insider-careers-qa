@@ -1,0 +1,7 @@
+infra/.env
+__pycache__/
+*.pyc
+.pytest_cache/
+reports/
+screenshots/
+.DS_Store
